@@ -1213,12 +1213,11 @@ class TfidfTransformer(BaseEstimator, TransformerMixin):
             n_samples, n_features = X.shape
             df = _document_frequency(X).astype(dtype)
 
-            # perform idf smoothing if required
+            # 做平滑处理，smooth_idf=True，则df+1
             df += int(self.smooth_idf)
             n_samples += int(self.smooth_idf)
 
-            # log+1 instead of log makes sure terms with zero idf don't get
-            # suppressed entirely.
+            # idf+1 避免idf的值为0
             idf = np.log(n_samples / df) + 1
             self._idf_diag = sp.diags(idf, offsets=0,
                                       shape=(n_features, n_features),
