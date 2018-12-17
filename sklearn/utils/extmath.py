@@ -61,7 +61,9 @@ def squared_norm(x):
 
 
 def row_norms(X, squared=False):
-    """Row-wise (squared) Euclidean norm of X.
+    """
+    按行计算每行所有元素的平方和
+    Row-wise (squared) Euclidean norm of X.
 
     Equivalent to np.sqrt((X * X).sum(axis=1)), but also supports sparse
     matrices and does not create an X.shape-sized temporary.

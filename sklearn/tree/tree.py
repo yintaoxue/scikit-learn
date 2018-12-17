@@ -134,7 +134,7 @@ class BaseDecisionTree(six.with_metaclass(ABCMeta, BaseEstimator)):
             # [:, np.newaxis] that does not.
             y = np.reshape(y, (-1, 1))
 
-        self.n_outputs_ = y.shape[1]
+        self.n_outputs_ = y.shape[1] # 单label时n_outputs_=1
 
         if is_classification:
             check_classification_targets(y)
@@ -148,10 +148,13 @@ class BaseDecisionTree(six.with_metaclass(ABCMeta, BaseEstimator)):
 
             y_encoded = np.zeros(y.shape, dtype=np.int)
             for k in range(self.n_outputs_):
+                # classes_k:label的枚举值
                 classes_k, y_encoded[:, k] = np.unique(y[:, k],
                                                        return_inverse=True)
                 self.classes_.append(classes_k)
                 self.n_classes_.append(classes_k.shape[0])
+
+            # 对y进行编码
             y = y_encoded
 
             if self.class_weight is not None:
@@ -159,7 +162,9 @@ class BaseDecisionTree(six.with_metaclass(ABCMeta, BaseEstimator)):
                     self.class_weight, y_original)
 
         else:
+            # label枚举值
             self.classes_ = [None] * self.n_outputs_
+            # label的类别个数
             self.n_classes_ = [1] * self.n_outputs_
 
         self.n_classes_ = np.array(self.n_classes_, dtype=np.intp)
@@ -202,6 +207,7 @@ class BaseDecisionTree(six.with_metaclass(ABCMeta, BaseEstimator)):
             min_samples_split = int(ceil(self.min_samples_split * n_samples))
             min_samples_split = max(2, min_samples_split)
 
+        # 最小拆分样本数，至少是 最小叶子样本数的 2倍
         min_samples_split = max(min_samples_split, 2 * min_samples_leaf)
 
         if isinstance(self.max_features, six.string_types):
@@ -345,6 +351,7 @@ class BaseDecisionTree(six.with_metaclass(ABCMeta, BaseEstimator)):
 
         self.tree_ = Tree(self.n_features_, self.n_classes_, self.n_outputs_)
 
+        # 根据是否限制最大叶子节点数来判断，使用DepthFirstTreeBuilder还是BestFirstTreeBuilder
         # Use BestFirst if max_leaf_nodes given; use DepthFirst otherwise
         if max_leaf_nodes < 0:
             builder = DepthFirstTreeBuilder(splitter, min_samples_split,
@@ -413,6 +420,8 @@ class BaseDecisionTree(six.with_metaclass(ABCMeta, BaseEstimator)):
         """
         check_is_fitted(self, 'tree_')
         X = self._validate_X_predict(X, check_input)
+
+        # 预测，并获得概率
         proba = self.tree_.predict(X)
         n_samples = X.shape[0]
 
@@ -514,7 +523,7 @@ class BaseDecisionTree(six.with_metaclass(ABCMeta, BaseEstimator)):
 # =============================================================================
 # Public estimators
 # =============================================================================
-
+# 分类决策树
 class DecisionTreeClassifier(BaseDecisionTree, ClassifierMixin):
     """A decision tree classifier.
 

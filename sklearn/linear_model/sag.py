@@ -252,6 +252,7 @@ def sag_solver(X, y, sample_weight=None, loss='log', alpha=1., beta=0.,
     beta_scaled = float(beta) / n_samples
 
     # if loss == 'multinomial', y should be label encoded.
+    # n_classes值为1，在loss不是multinomial的情况下
     n_classes = int(y.max()) + 1 if loss == 'multinomial' else 1
 
     # initialization
@@ -303,7 +304,10 @@ def sag_solver(X, y, sample_weight=None, loss='log', alpha=1., beta=0.,
     dataset, intercept_decay = make_dataset(X, y, sample_weight, random_state)
 
     if max_squared_sum is None:
+        # 计算每个样本所有特征的平方和，然后取最大值
         max_squared_sum = row_norms(X, squared=True).max()
+
+    # 计算每步的大小，loss='squared'时，step_size = 1 / (max_squared_sum + int(fit_intercept) + alpha_scaled)
     step_size = get_auto_step_size(max_squared_sum, alpha_scaled, loss,
                                    fit_intercept, n_samples=n_samples,
                                    is_saga=is_saga)

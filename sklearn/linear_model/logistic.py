@@ -710,6 +710,9 @@ def logistic_regression_path(X, y, pos_class=None, Cs=10, fit_intercept=True,
 
     coefs = list()
     n_iter = np.zeros(len(Cs), dtype=np.int32)
+
+    # Cs 表示多个C值，用于交叉验证选择最优的
+    # 因此遍历所有的C值：
     for i, C in enumerate(Cs):
         if solver == 'lbfgs':
             iprint = [-1, 50, 1, 100, 101][
@@ -750,6 +753,9 @@ def logistic_regression_path(X, y, pos_class=None, Cs=10, fit_intercept=True,
             else:
                 alpha = 1. / C
                 beta = 0.
+
+            # sag算法
+            # 返回：w0为系数，n_iter_i为在所有样本上的迭代次数
             w0, n_iter_i, warm_start_sag = sag_solver(
                 X, target, sample_weight, loss, alpha,
                 beta, max_iter, tol,
@@ -769,6 +775,7 @@ def logistic_regression_path(X, y, pos_class=None, Cs=10, fit_intercept=True,
             coefs.append(w0.copy())
 
         n_iter[i] = n_iter_i
+    # end for i, C in enumerate(Cs):
 
     return np.array(coefs), np.array(Cs), n_iter
 
@@ -1239,6 +1246,7 @@ class LogisticRegression(BaseEstimator, LinearClassifierMixin,
                 warnings.warn("'n_jobs' > 1 does not have any effect when"
                               " 'solver' is set to 'liblinear'. Got 'n_jobs'"
                               " = {}.".format(self.n_jobs))
+            # 对liblinear进行封装调用，https://www.csie.ntu.edu.tw/~cjlin/liblinear/
             self.coef_, self.intercept_, n_iter_ = _fit_liblinear(
                 X, y, self.C, self.fit_intercept, self.intercept_scaling,
                 self.class_weight, self.penalty, self.dual, self.verbose,
@@ -1282,6 +1290,7 @@ class LogisticRegression(BaseEstimator, LinearClassifierMixin,
         if warm_start_coef is None:
             warm_start_coef = [None] * n_classes
 
+        # 并行执行的函数
         path_func = delayed(logistic_regression_path)
 
         # The SAG solver releases the GIL so it's more efficient to use
@@ -1290,6 +1299,8 @@ class LogisticRegression(BaseEstimator, LinearClassifierMixin,
             prefer = 'threads'
         else:
             prefer = 'processes'
+
+        # 并行执行，使用joblib.Paralle
         fold_coefs_ = Parallel(n_jobs=self.n_jobs, verbose=self.verbose,
                                prefer=prefer)(
             path_func(X, y, pos_class=class_, Cs=[self.C],
